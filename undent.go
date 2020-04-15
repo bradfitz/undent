@@ -5,7 +5,6 @@ import (
 	"flag"
 	"log"
 	"os"
-	"os/exec"
 )
 
 var clip = flag.Bool("clip", false, "fix clipboard; else use stdin/stdout or named file")
@@ -16,7 +15,7 @@ func main() {
 	var err error
 	var in, out []byte
 	if *clip {
-		in, err = exec.Command("pbpaste").Output()
+		in, err = getClip()
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -31,11 +30,7 @@ func main() {
 	}
 	out = bytes.Join(lines, []byte("\n"))
 	if *clip {
-		cmd := exec.Command("pbcopy")
-		cmd.Stdin = bytes.NewReader(out)
-		if err := cmd.Run(); err != nil {
-			log.Fatal(err)
-		}
+		pasteClip(out)
 	} else {
 		os.Stdout.Write(out)
 	}
