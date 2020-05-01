@@ -5,6 +5,8 @@ import (
 	"flag"
 	"log"
 	"os"
+
+	"github.com/atotto/clipboard"
 )
 
 var clip = flag.Bool("clip", false, "fix clipboard; else use stdin/stdout or named file")
@@ -12,13 +14,13 @@ var clip = flag.Bool("clip", false, "fix clipboard; else use stdin/stdout or nam
 func main() {
 	flag.Parse()
 
-	var err error
 	var in, out []byte
 	if *clip {
-		in, err = getClip()
+		str, err := clipboard.ReadAll()
 		if err != nil {
 			log.Fatal(err)
 		}
+		in = []byte(str)
 	}
 	lines := bytes.Split(in, []byte("\n"))
 	for len(lines) > 0 && linesStartWith(firstNonEmptyByte(lines), lines) {
@@ -30,7 +32,7 @@ func main() {
 	}
 	out = bytes.Join(lines, []byte("\n"))
 	if *clip {
-		pasteClip(out)
+		clipboard.WriteAll(string(out))
 	} else {
 		os.Stdout.Write(out)
 	}
