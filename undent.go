@@ -2,7 +2,9 @@ package main
 
 import (
 	"bytes"
+	"errors"
 	"flag"
+	"io/ioutil"
 	"log"
 	"os"
 
@@ -14,14 +16,11 @@ var clip = flag.Bool("clip", false, "fix clipboard; else use stdin/stdout or nam
 func main() {
 	flag.Parse()
 
-	var in, out []byte
-	if *clip {
-		str, err := clipboard.ReadAll()
-		if err != nil {
-			log.Fatal(err)
-		}
-		in = []byte(str)
+	in, err := readFromArgs()
+	if err != nil {
+		log.Fatal(err)
 	}
+
 	lines := bytes.Split(in, []byte("\n"))
 	for len(lines) > 0 && linesStartWith(firstNonEmptyByte(lines), lines) {
 		for i := range lines {
@@ -30,12 +29,28 @@ func main() {
 			}
 		}
 	}
-	out = bytes.Join(lines, []byte("\n"))
+	out := bytes.Join(lines, []byte("\n"))
 	if *clip {
 		clipboard.WriteAll(string(out))
 	} else {
 		os.Stdout.Write(out)
 	}
+}
+
+func readFromArgs() ([]byte, error) {
+	if *clip {
+		c, err := clipboard.ReadAll()
+		return []byte(c), err
+	}
+
+	switch flag.NArg() {
+	case 0:
+		return ioutil.ReadAll(os.Stdin)
+	case 1:
+		return ioutil.ReadFile(flag.Arg(0))
+	}
+
+	return nil, errors.New("Usage: undent [-clip] [file]")
 }
 
 // returning 0 means stop
