@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"unicode"
 )
 
 var clip = flag.Bool("clip", false, "fix clipboard; else use stdin/stdout or named file")
@@ -26,6 +27,9 @@ func main() {
 				lines[i] = lines[i][1:]
 			}
 		}
+	}
+	for i := range lines {
+		lines[i] = bytes.TrimRightFunc(lines[i], unicode.IsSpace)
 	}
 	out := bytes.Join(lines, []byte("\n"))
 	if *clip {
